@@ -1,0 +1,244 @@
+(A)
+Questions: Write queries for the following in relational algebra as well as in SQL: 
+
+1. Find the employees working on ‘Banking’ project. 
+2. Find the projects assigned to the employees of D01 or D02. 
+3. Find the employees who belong to Delhi and work on either ‘University’ project or 
+‘ShareMarket’ project 
+4. Find the employees who do not work on ‘University’ project. 
+5. Find the employees who work on all projects. 
+6. List the employees who have not been assigned any project. 
+7. Find the employees who joined the department after the commencement of ‘Bank’ project. 
+8. Display the start and termination date of projects which are allotted to ‘Jai Prakash’. 
+
+Solutions:
+
+CREATE DATABASE mca_sql_a3;
+use mca_sql_a3;
+
+CREATE TABLE Employee (
+    EId VARCHAR(5) PRIMARY KEY,
+    Ename VARCHAR(10) NOT NULL,
+    Address VARCHAR(20) NOT NULL,
+    DateOfJoining date,
+    Department VARCHAR(10)
+);
+DESC Employee;
+
+CREATE TABLE Project (
+    PId VARCHAR(5) PRIMARY KEY,
+    Pname VARCHAR(10) NOT NULL,
+    StartDate date,
+    TerminationDate date
+);
+DESC Project;
+
+CREATE TABLE AssignedTo (
+    EId VARCHAR(5)  REFERENCES EMPLOYEE (EId),
+    PId VARCHAR(5)  REFERENCES PROJECT (PId),
+    PRIMARY KEY (EId, PId)
+);
+DESC AssignedTo;
+
+
+INSERT INTO Employee VALUES
+("E1", "Ravi", "Jangpura", '2021-12-12', "D01"),
+("E2", "J P", "Mohali", '2021-12-15', "D02"),
+("E3", "Anjali", "Shimla", '2021-12-16', "D03"),
+("E4", "Bhavesh", "Delhi", '2021-11-12', "D04"),
+("E5", "Rohan", "Rajasthan", '2020-06-12', "D05"),
+("E6", "Chanchal", "Mumbai", '2020-09-13', "D06"),
+("E7", "Ramesh", "Delhi", '2019-12-15', "D07"),
+("E8", "Kishan", "Delhi", '2022-12-12', "D08"),
+("E9", "Santram", "Mandi House", '2018-12-12', "D09"),
+("E10", "Sid", "Delhi", '2021-12-15', "D10");
+SELECT * FROM Employee;
+
+
+INSERT INTO Project VALUES
+("P1", "ER", '2022-02-17', '2022-03-17'),
+("P2", "IOT", '2021-07-18', '2022-08-17'),
+("P3", "Banking", '2022-08-07', '2022-09-17'),
+("P4", "University", '2021-11-12', '2022-12-17'),
+("P5", "IRCTC", '2022-06-01', '2022-07-17'),
+("P6", "AI", '2020-09-13', '2021-10-14'),
+("P7", "ML", '2022-01-01', '2022-02-17'),
+("P8", "Shr Mrkt", '2021-07-08', '2022-03-20'),
+("P9", "HospMngmnt", '2022-09-15', '2022-12-25'),
+("P10", "Discmnger", '2022-07-19', '2023-01-17');
+SELECT * FROM Project;
+
+
+INSERT INTO AssignedTO VALUES
+("E1", "P1"),
+("E2", "P1"),
+("E1", "P7"),
+("E3", "P4"),
+("E3", "P5"),
+("E1", "P3"),
+("E4", "P3"),
+("E5", "P8"),
+("E9", "P3"),
+("E9", "P6"),
+("E7","P8"),
+("E8","P4");
+SELECT * FROM AssignedTO;
+
+SELECT E.* FROM Employee as E
+    JOIN AssignedTo as Ast ON Ast.Eid = E.Eid
+    JOIN Project as P ON P.Pid = Ast.Pid 
+    WHERE P.PName = "Banking";
+
+SELECT P.* FROM Project as P
+    JOIN AssignedTo as Ast ON Ast.Pid = P.Pid
+    JOIN Employee as E ON E.Eid = Ast.Eid 
+    WHERE E.Department IN ("D01", "D02")
+    GROUP BY P.Pid ORDER BY P.Pid;
+
+SELECT E.* FROM Employee as E
+    JOIN AssignedTo as Ast ON Ast.Eid = E.Eid
+    JOIN Project as P ON P.Pid = Ast.Pid 
+    WHERE P.PName IN ("University", "Shr Mrkt") AND
+    E.Address = "Delhi";
+
+SELECT E.* FROM Employee as E
+    JOIN AssignedTo as Ast ON Ast.Eid = E.Eid
+    JOIN Project as P ON P.Pid = Ast.Pid 
+    WHERE P.PName <> "University";
+
+SELECT E.* FROM Employee as E
+JOIN AssignedTo as Ast ON Ast.Eid = E.Eid
+GROUP BY E.Eid
+HAVING Count(*) = (SELECT Count(*) FROM Project);
+
+SELECT E1.* FROM Employee as E1
+    LEFT JOIN ( SELECT E2.Eid as id FROM Employee as E2
+    JOIN AssignedTo as Ast ON Ast.Eid = E2.Eid
+    GROUP BY E2.Eid) as X ON X.id = E1.Eid WHERE X.id IS NULL;
+
+SELECT E.* FROM Employee as E
+    JOIN Assi
+gnedTo as Ast ON Ast.Eid = E.Eid
+    JOIN Project as P ON P.Pid = Ast.Pid 
+    WHERE E.DateOfJoining > (SELECT StartDate FROM Project WHERE PName = "Bank" ) GROUP BY E.Eid;
+
+SELECT P.StartDate, P.TerminationDate
+    FROM Project as P
+    JOIN AssignedTo as Ast ON Ast.Pid = P.Pid
+    JOIN Employee as E ON E.Eid = Ast.Eid
+    WHERE E.Ename = "J P";
+
+__________________________________________________________________
+
+(B)
+Questions: Write SQL queries for the following:
+
+1. Find the details of students registered in MCA course. 
+2. Display the total number of students enrolled in MBA. 
+3. Display the names of students who are enrolled in the course in which “Anita” is registered. 
+4. Display the names of all the students with their date of enrollment in the courses. 
+5. Display the name of the course in which “Kunal” is registered. 
+6. Display the names of boys-students enrolled in MCA. 
+7. Display the number of students registered in MCA course who live outside Delhi.
+
+Solutions:
+
+CREATE TABLE Student (
+    Roll INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    SName VARCHAR(30) NOT NULL,
+    City VARCHAR(30) NOT NULL,
+    Age INT UNSIGNED NOT NULL CHECK(Age > 0),
+    Gender ENUM('Male', 'Female') NOT NULL
+);
+DESC Student;
+
+CREATE TABLE Course (
+    Cid INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    CName VARCHAR(30) NOT NULL,
+    Semester INT UNSIGNED NOT NULL,
+    Credits INT UNSIGNED NOT NULL,
+    Fee DECIMAL(7, 2) NOT NULL CHECK (Fee >= 0)
+);
+DESC Course;
+
+CREATE TABLE Enrollment (
+    Roll INT UNSIGNED,
+    Cid INT UNSIGNED,
+    EnrollmentDate DATE NOT NULL,
+    PRIMARY KEY (Roll, Cid),
+    FOREIGN KEY (Roll) REFERENCES Student(Roll),
+    FOREIGN KEY (Cid) REFERENCES Course(Cid)
+);
+DESC Enrollment;
+
+INSERT INTO Student(SName, City, Age, Gender) VALUES
+    ("Anita", "Delhi", 20, "Female"),
+    ("Kunal", "Haryana", 21, "Male"),
+    ("Akash", "Goa", 20, "Male"),
+    ("Alamat", "Mumbai", 22, "Male"),
+    ("Vridhi", "Delhi", 20, "Female"),
+    ("Harshita", "Delhi", 21, "Female"),
+    ("Mukul", "Chennai", 21, "Male");
+SELECT * FROM Student;
+
+INSERT INTO Course(CName, Semester, Credits, Fee) VALUES
+    ("MCA", 1, 120, 18600),
+    ("MCA", 3, 120, 15000),
+    ("MBA", 1, 250, 20000),
+    ("MTech", 4, 250, 25000);
+SELECT * FROM Course;
+
+INSERT INTO Enrollment VALUES
+    (1, 1, "2022-10-01"),
+    (2, 3, "2022-09-01"),
+    (3, 3, "2022-09-01"),
+    (4, 4, "2021-06-01"),
+    (5, 4, "2021-06-01"),
+    (6, 2, "2021-10-01"),
+    (7, 2, "2021-10-01");
+SELECT * FROM Enrollment;
+
+SELECT S.* FROM Student AS S
+    JOIN Enrollment AS E ON E.Roll = S.Roll
+    JOIN Course AS C ON C.Cid = E.Cid
+    WHERE C.CName = "MCA";
+
+
+SELECT COUNT(*) FROM Student AS S
+    JOIN Enrollment AS E ON E.Roll = S.Roll
+    JOIN Course AS C ON C.Cid = E.Cid
+    WHERE C.CName = "MBA";
+
+
+SELECT S.SName AS Name FROM Student AS S
+    JOIN Enrollment AS E ON E.Roll = S.Roll
+    JOIN Course AS C ON C.Cid = E.Cid
+    WHERE C.CName = (
+        SELECT C2.CName FROM Student AS S2
+        JOIN Enrollment AS E2 ON E2.Roll = S2.Roll
+        JOIN Course AS C2 ON C2.Cid = E2.Cid
+        WHERE S2.SName = "Anita"
+    );
+
+
+SELECT S.SName, E.EnrollmentDate
+    FROM Student as S
+    JOIN Enrollment as E ON E.Roll = S.Roll;
+
+
+SELECT C.CName FROM Student AS S
+    JOIN Enrollment AS E ON E.Roll = S.Roll
+    JOIN Course AS C ON C.Cid = E.Cid
+    WHERE S.SName = "Kunal";
+
+
+SELECT S.SName FROM Student as S
+    JOIN Enrollment AS E ON E.Roll = S.Roll
+    JOIN Course AS C ON C.Cid = E.Cid
+    WHERE C.CName = "MCA" and S.Gender = "Male";
+
+
+SELECT Count(*) FROM Student as S
+    JOIN Enrollment AS E ON E.Roll = S.Roll
+    JOIN Course AS C ON C.Cid = E.Cid
+    WHERE C.CName = "MCA" AND S.City <> "Delhi";

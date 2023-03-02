@@ -1,0 +1,622 @@
+Questions:
+
+Qn-1: Write a PL/SQL code that accepts the account number from the user and check the users balance. If it is greater than 1000 , only then deduct Rs. 200/- from the balance . The process is fired on the Acct_Mstr table.
+
+Qn-2: Write a PL/SQL code to calculate the area of a circle for a value of radius varying from 3 to 7. Store the radius and the corresponding values of calculated area in an empty table named Areas , consisting of two columns Radius and Area.
+
+Qn-3: Write a PL/SQL code that first withdraws an amount of Rs. 1500/-. Then deposits an amount of Rs. 50,000.Update the current balance . Then check to see that the sum of the current balance of all the accounts in the bank does not exceed Rs. 60,00,000. If the balance exceeds Rs 60,00,000 then undo the deposit just made.
+
+Qn-4: Write a PL/SQL code that will reverse a given number like 12345 to 54321.
+
+Use of Cursors :
+
+Qn-5: The bank manager of Delhi branch decides to mark the status of all those accounts as ‘Inactive’ on which there are no transactions performed in last 6 months. Whenever any such update takes place the corresponding record is inserted in another table ‘InactiveAccounts’ with the name and account no of the account holder and his balance.
+(Table : Account (AccNo, Name, Address, PANNo, Mobile, Status)
+ 
+Qn-6: Write a PL/SQL code that updates the balance of the account holder of ‘delhi’ branch and displays the number of records updated. (Use implicit cursor)
+
+Cursor and Error Handing :
+
+Qn-7: Write a Cursor( PL/SQL code) to display the Employee_name, Dateofbirth ,Designation whose basic salary is greater than 15000, if not found then show the proper error message. (Use Exception handing)
+
+Procedures and Functions :
+
+Qn-8: Create a procedure that accepts the emp id from the calling procedure and displays his/her record.
+
+Qn-9: Create a function that accepts emp id from the calling procedure and returns his salary.
+
+Qn-10: Write a PL/SQL function ODDEVEN to return value TRUE if the number passed to it is EVEN else will return FALSE.
+
+Qn-11: Write a PL/SQL procedure called MULTI_TABLE that takes two numbers as parameter and displays the multiplication of the first parameter till the second parameter.
+
+Trigger :
+ 
+Qn-12: Create a Trigger in PL/SQL which will work before deletion or updation in employee_master table 
+and inserts a duplicate copy of the record in another table for future reference.
+
+Qn-13: Create a Trigger in PL/SQL which will work after update or insert on employee _master and store 
+the old data and deleted data in a table named as backup_employee_master.
+
+--------------------------------------------------------------------------------------
+Solutions:
+
+Qn-1:
+
+DROP TABLE Acct_Mstr;
+
+CREATE TABLE Acct_Mstr (
+    acct_num NUMBER(10) NOT NULL PRIMARY KEY,
+    balance NUMBER(10, 2) DEFAULT 0
+);
+
+INSERT INTO Acct_Mstr
+    SELECT 6, 3000 FROM DUAL
+    UNION ALL
+    SELECT 7, 3500 FROM DUAL
+    UNION ALL
+    SELECT 8, 4000 FROM DUAL
+    UNION ALL
+    SELECT 9, 4500 FROM DUAL
+    UNION ALL
+    SELECT 10, 5000 FROM DUAL;
+
+DESC Acct_Mstr;
+SELECT * FROM Acct_Mstr;
+
+DECLARE
+    account_number  NUMBER;
+    balance         NUMBER;
+BEGIN
+-- Prompt the user for the account number
+    account_number := :account_number;
+    DBMS_OUTPUT.PUT_LINE (
+        'Entered Account Number: ' ||
+        account_number
+    );
+-- Check the balance for the given account number
+    SELECT
+        balance INTO balance
+    FROM
+        Acct_Mstr
+    WHERE
+        acct_num = account_number;
+-- If the balance is greater than 1000, deduct Rs. 200/- from the balance
+    IF balance > 1000 THEN
+        UPDATE Acct_Mstr
+        SET
+            balance = balance - 200
+        WHERE
+            acct_num = account_number;
+    END IF;
+END;
+
+SELECT *
+    FROM Acct_Mstr;
+
+--------------------------------------------------------------------------------------
+
+Qn-2:
+
+DROP Table Areas;
+
+CREATE TABLE Areas (
+    radius NUMBER(10),
+    area NUMBER(10, 2)
+);
+
+DESC Areas;
+
+DECLARE
+    radius NUMBER(10);
+    area   NUMBER(10, 2);
+BEGIN
+    FOR radius IN 3..7 LOOP
+        area := radius * radius * 3.14;
+        INSERT INTO Areas VALUES (
+            radius,
+            area
+        );
+    END LOOP;
+END;
+
+SELECT * FROM Areas;
+
+--------------------------------------------------------------------------------------
+
+Qn-3:
+
+DECLARE
+    account_number NUMBER;
+    total_balance  NUMBER;
+BEGIN
+-- Prompt the user for the account number
+    account_number := :account_number;
+    DBMS_OUTPUT.PUT_LINE (
+        'Entered account number: ' ||
+        account_number
+    );
+-- Withdraw Rs. 1500/- from the given account
+    UPDATE Acct_Mstr
+    SET
+        balance = balance - 1500
+    WHERE
+        acct_num = account_number;
+-- Deposit Rs. 50,000/- into the same account
+    UPDATE Acct_Mstr
+    SET
+        balance = balance + 50000
+    WHERE
+        acct_num = account_number;
+-- Check the total balance for all accounts in the bank
+    SELECT
+        SUM(balance) INTO total_balance
+    FROM
+        Acct_Mstr;
+-- If the total balance exceeds Rs. 60,00,000/-, undo the deposit just made
+    IF total_balance > 6000000 THEN
+        UPDATE Acct_Mstr
+        SET
+            balance = balance - 50000
+        WHERE
+            acct_num = account_number;
+    END IF;
+END;
+
+SELECT * FROM Acct_Mstr;
+
+--------------------------------------------------------------------------------------
+
+Qn-4:
+
+DECLARE
+    input_num    NUMBER := 0;
+    original_num NUMBER := 0;
+    rev_num      NUMBER := 0;
+BEGIN
+    input_num := :input_num;
+    original_num := input_num;
+    DBMS_OUTPUT.PUT_LINE('Entered number: '
+        ||input_num);
+    WHILE input_num > 0 LOOP
+        rev_num := rev_num * 10 + MOD(input_num, 10);
+        input_num := FLOOR(input_num / 10);
+    END LOOP;
+    DBMS_OUTPUT.PUT_LINE(
+        'Reverse of: ' || original_num ||
+        ' = ' || rev_num
+    );
+END;
+
+--------------------------------------------------------------------------------------
+
+Qn-5:
+
+DROP TABLE InactiveAccounts;
+DROP TABLE Transactions;
+DROP TABLE Account;
+
+CREATE TABLE Account (
+    AccNo NUMBER(10) NOT NULL PRIMARY KEY,
+    Name VARCHAR2(50) NOT NULL,
+    address VARCHAR2(100) NOT NULL,
+    PanNo VARCHAR2(20) NOT NULL,
+    mobile VARCHAR2(15) NOT NULL,
+    status VARCHAR2(20) DEFAULT 'Active',
+    Balance NUMBER NOT NULL
+);
+
+CREATE TABLE Transactions (
+    TransID NUMBER PRIMARY KEY,
+    AccNo NUMBER(10) REFERENCES Account(AccNo),
+    TransType VARCHAR2(20),
+    TransDate DATE,
+    amount NUMBER
+);
+
+CREATE TABLE InactiveAccounts (
+    AccNo NUMBER(10) PRIMARY KEY REFERENCES Account(AccNo),
+    Name VARCHAR2(50) NOT NULL,
+    Balance NUMBER NOT NULL
+);
+
+DESC Account;
+DESC Transactions;
+DESC InactiveAccounts;
+
+INSERT INTO Account (AccNo, Name, Address, PANNo, Mobile, BALANCE)
+    SELECT 
+        1001, 'JS', '123 MS', '123456ABCD', '9876543210', 500
+        FROM DUAL
+    UNION ALL
+    SELECT
+        1002, 'JD', '456 PA', '234567BCDE', '1234567890', 600
+        FROM DUAL
+    UNION ALL
+    SELECT
+        1003, 'BJ', '789 MrS', '345678CDEF', '0987654321', 700
+        FROM DUAL
+    UNION ALL
+    SELECT 
+        1004, 'AW', '321 MpS', '456789DEFG', '1234567890', 800
+        FROM DUAL
+    UNION ALL
+    SELECT 
+        1005, 'TB', '654 PS', '567890EFGH', '9876543210', 900
+    FROM DUAL;
+
+INSERT INTO Transactions
+    SELECT 1, 1001, 'Deposit', ADD_MONTHS(SYSDATE, -7), 10000 FROM DUAL
+    UNION ALL
+    SELECT 2, 1002, 'Withdrawal', ADD_MONTHS(SYSDATE, -7), 5000 FROM DUAL
+    UNION ALL
+    SELECT 3, 1003, 'Transfer', SYSDATE, 2500 FROM DUAL
+    UNION ALL
+    SELECT 4, 1004, 'Deposit', SYSDATE, 15000 FROM DUAL
+    UNION ALL
+    SELECT 5, 1005, 'Withdrawal', SYSDATE, 2500 FROM DUAL;
+
+
+SELECT * FROM Account;
+SELECT * FROM Transactions;
+SELECT * FROM InactiveAccounts;
+
+DECLARE
+    CURSOR inaccounts IS
+        SELECT
+            A.Name, A.AccNo, A.Balance
+        FROM
+            Account A
+            LEFT JOIN Transactions T
+            ON A.AccNo = T.AccNo
+        WHERE
+            T.TransDate < ADD_MONTHS(SYSDATE, -6);
+BEGIN
+    FOR C IN inaccounts LOOP
+-- Mark the status of the Account as "Inactive"
+        UPDATE Account
+        SET
+            status = 'Inactive'
+        WHERE
+            AccNo = C.AccNo;
+-- Insert inactive record into InactiveAccounts
+        INSERT INTO InactiveAccounts VALUES (
+            C.AccNo, C.Name, C.Balance
+        );
+    END LOOP;
+END;
+
+SELECT * FROM Account;
+SELECT * FROM InactiveAccounts;
+
+--------------------------------------------------------------------------------------
+
+Qn-6:
+
+DROP TABLE Account;
+
+CREATE TABLE Account (
+    AccNo NUMBER PRIMARY KEY,
+    Balance NUMBER,
+    Branch VARCHAR2(50)
+);
+
+INSERT INTO Account (AccNo, Balance, Branch)
+    SELECT 1001, 10000, 'Delhi' FROM DUAL
+    UNION ALL
+    SELECT 1002, 15000, 'Mumbai' FROM DUAL
+    UNION ALL
+    SELECT 1003, 20000, 'Delhi' FROM DUAL
+    UNION ALL
+    SELECT 1004, 25000, 'Chennai' FROM DUAL
+    UNION ALL
+    SELECT 1005, 30000, 'Delhi' FROM DUAL;
+
+DESC Account;
+SELECT * FROM Account;
+
+DECLARE
+    v_count NUMBER := 0;
+BEGIN
+    UPDATE Account
+    SET
+        balance = balance + 1000
+    WHERE
+        branch = 'Delhi';
+
+    v_count := SQL%ROWCOUNT;
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Number of rows affected: '||
+        v_count
+    );
+END;
+
+SELECT * FROM Account;
+
+--------------------------------------------------------------------------------------
+
+Qn-7:
+
+DROP TABLE Employees;
+
+CREATE TABLE Employees (
+    EmpId NUMBER PRIMARY KEY,
+    Name VARCHAR2(50) NOT NULL,
+    DOB DATE NOT NULL,
+    Designation VARCHAR2(50) NOT NULL,
+    BasicSalary NUMBER NOT NULL,
+    CONSTRAINT chk_salary CHECK (BasicSalary > 0)
+);
+
+INSERT INTO Employees (EmpId, Name, DOB, Designation, BasicSalary)
+    SELECT 1, 'JD', TO_DATE('1980-01-01', 'YYYY-MM-DD'), 'M', 10000 FROM DUAL
+    UNION ALL
+    SELECT 2, 'JX', TO_DATE('1985-05-15', 'YYYY-MM-DD'), 'E', 9000 FROM DUAL
+    UNION ALL
+    SELECT 3, 'JY', TO_DATE('2001-08-12', 'YYYY-MM-DD'), 'M', 17000 FROM DUAL
+    UNION ALL
+    SELECT 4, 'BS', TO_DATE('1990-07-20', 'YYYY-MM-DD'), 'S', 12000 FROM DUAL;
+
+DESC Employees;
+SELECT * FROM Employees;
+
+DECLARE
+    CURSOR c_employees IS
+        SELECT 
+            e.Name, e.DOB, e.Designation
+        FROM 
+            Employees e
+        WHERE 
+            e.BasicSalary > 15000;
+    v_count NUMBER := 0;
+    v_error EXCEPTION;
+BEGIN
+    FOR emp IN c_employees LOOP
+        DBMS_OUTPUT.PUT_LINE(
+            emp.Name ||
+            ' (' ||
+            TO_CHAR(emp.DOB, 'DD-MON-YYYY') ||
+            ') '
+            ||
+            emp.designation
+        );
+        v_count := v_count + 1;
+    END LOOP;
+    IF v_count = 0 THEN
+        RAISE v_error;
+    END IF;
+EXCEPTION
+    WHEN v_error THEN
+        DBMS_OUTPUT.PUT_LINE('Error: No employees found');
+END;
+
+--------------------------------------------------------------------------------------
+
+Qn-8:
+
+CREATE OR REPLACE PROCEDURE
+    show_employee (p_emp_id IN Employees.EmpId%TYPE)
+AS
+    v_name Employees.Name%TYPE;
+    v_dob Employees.DOB%TYPE;
+    v_designation Employees.Designation%TYPE;
+    v_salary Employees.BasicSalary%TYPE;
+BEGIN
+    SELECT 
+        Name, DOB, Designation, BasicSalary
+    INTO 
+        v_name, v_dob, v_designation, v_salary
+    FROM 
+        Employees
+    WHERE 
+        EmpId = p_emp_id;
+
+    DBMS_OUTPUT.PUT_LINE(
+        v_name || ' (' ||
+        TO_CHAR(v_dob, 'DD-MON-YYYY') ||
+        ') ' || v_designation ||
+        ' [' || TO_CHAR(v_salary) || ']'
+    );
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Employee not found');
+END;
+
+-- Driver Code for above procedure
+BEGIN
+    show_employee(2);
+    show_employee(50);
+END;
+
+--------------------------------------------------------------------------------------
+
+Qn-9:
+
+CREATE OR REPLACE FUNCTION
+    get_salary (p_emp_id IN Employees.EmpId%TYPE)
+RETURN Employees.BasicSalary%TYPE
+AS
+    v_salary Employees.BasicSalary%TYPE;
+BEGIN
+    SELECT
+        BasicSalary
+    INTO
+        v_salary
+    FROM
+        Employees
+    WHERE
+        EmpId = p_emp_id;
+
+    RETURN v_salary;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN NULL;
+END;
+
+-- Driver code for the above function
+DECLARE
+    v_salary Employees.BasicSalary%TYPE;
+BEGIN
+    v_salary := get_salary(2);
+    DBMS_OUTPUT.PUT_LINE('Salary: ' || TO_CHAR(v_salary));
+END;
+
+--------------------------------------------------------------------------------------
+
+Qn-10:
+
+CREATE OR REPLACE FUNCTION
+    ODDEVEN (p_number IN NUMBER)
+RETURN BOOLEAN
+AS
+BEGIN
+    IF MOD(p_number, 2) = 0 THEN
+        RETURN TRUE;
+    ELSE
+        RETURN FALSE;
+    END IF;
+END;
+
+-- Driver Code for the above function
+BEGIN
+    DBMS_OUTPUT.PUT_LINE(
+        SYS.DIUTIL.BOOL_TO_INT(ODDEVEN(1)) --output: 0
+    );
+    DBMS_OUTPUT.PUT_LINE(
+        SYS.DIUTIL.BOOL_TO_INT(ODDEVEN(2)) --output: 1
+    );
+END;
+
+--------------------------------------------------------------------------------------
+
+Qn-11:
+
+CREATE OR REPLACE PROCEDURE
+    MULTI_TABLE (p_number IN NUMBER, p_limit IN NUMBER)
+AS
+BEGIN
+    FOR i IN 1..p_limit
+    LOOP
+        DBMS_OUTPUT.PUT_LINE(
+            p_number || ' x ' || i || ' = ' || p_number * i
+        );
+    END LOOP;
+END;
+
+-- Driver code for the above function
+BEGIN
+    MULTI_TABLE(2, 10);
+END;
+
+--------------------------------------------------------------------------------------
+
+Qn-12:
+
+DROP TABLE employee_master;
+DROP TABLE employee_backup;
+
+CREATE TABLE employee_master (
+    EmpId NUMBER PRIMARY KEY,
+    Name VARCHAR2(50) NOT NULL,
+    DOB VARCHAR2(50) NOT NULL,
+    Designation VARCHAR2(50) NOT NULL,
+    BasicSalary NUMBER NOT NULL
+);
+
+CREATE TABLE employee_backup (
+    EmpId NUMBER PRIMARY KEY,
+    Name VARCHAR2(50),
+    DOB VARCHAR2(50),
+    Designation VARCHAR2(50),
+    BasicSalary NUMBER
+);
+
+INSERT INTO employee_master (EmpId, Name, DOB, Designation, BasicSalary)
+    SELECT 1, 'John Smith', '1980-01-01', 'Manager', 10000 FROM DUAL
+    UNION ALL
+    SELECT 2, 'Jane Doe', '1985-03-15', 'Assistant Manager', 8000 FROM DUAL
+    UNION ALL
+    SELECT 3, 'Bob Johnson', '1990-05-30', 'Analyst', 6000 FROM DUAL
+    UNION ALL
+    SELECT 4, 'Alice Williams', '1995-08-15', 'Clerk', 4000 FROM DUAL;
+
+DESC employee_master;
+DESC employee_backup;
+SELECT * FROM employee_master;
+
+CREATE OR REPLACE TRIGGER employee_backup
+BEFORE DELETE OR UPDATE ON employee_master
+FOR EACH ROW
+BEGIN
+    INSERT INTO 
+        employee_backup (EmpId, Name, DOB, Designation, BasicSalary)
+    VALUES 
+        (
+            :OLD.EmpId, :OLD.Name, :OLD.DOB,
+            :OLD.Designation, :OLD.BasicSalary
+        );
+END;
+
+-- query to trigger the above TRIGGER
+DELETE FROM employee_master WHERE EmpId = 1;
+
+SELECT * FROM employee_master;
+SELECT * FROM employee_backup;
+
+--------------------------------------------------------------------------------------
+
+Qn-13:
+
+DROP TABLE backup_employee_master;
+DROP SEQUENCE id_seq;
+
+CREATE TABLE backup_employee_master (
+    BID NUMBER PRIMARY KEY,
+    EmpId NUMBER,
+    Name VARCHAR2(50),
+    DOB VARCHAR(50),
+    Designation VARCHAR2(50),
+    BasicSalary NUMBER,
+    Action VARCHAR2(10)
+);
+
+DESC backup_employee_master;
+
+CREATE SEQUENCE id_seq;
+
+-- Update, Insert Trigger
+CREATE OR REPLACE TRIGGER employee_backup
+AFTER UPDATE OR INSERT ON employee_master
+FOR EACH ROW
+DECLARE
+    v_count NUMBER;
+BEGIN
+    SELECT id_seq.nextval INTO v_count FROM DUAL;
+    INSERT INTO backup_employee_master
+    VALUES (
+        v_count,
+        :OLD.EmpId, :OLD.Name, :OLD.DOB,
+        :OLD.Designation, :OLD.BasicSalary, 'DELETED'
+    );
+    SELECT id_seq.nextval INTO v_count FROM DUAL;
+    INSERT INTO backup_employee_master
+    VALUES (
+        v_count,
+        :NEW.EmpId, :NEW.Name, :NEW.DOB,
+        :NEW.Designation, :NEW.BasicSalary, 'INSERTED'
+    );
+END;
+
+-- Update a row in the employee_master table to trigger the trigger
+UPDATE employee_master
+SET 
+    Name = 'John Smith Jr.',
+    DOB = '1982-01-01',
+    Designation = 'Manager II',
+    BasicSalary = 12000
+WHERE EmpId = 2;
+
+SELECT * FROM employee_master;
+SELECT * FROM backup_employee_master;
+
+--------------------------------------------------------

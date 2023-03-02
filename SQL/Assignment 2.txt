@@ -1,0 +1,105 @@
+Questions: Write SQL queries for:
+
+1. Insert few records except total marks. 
+2. Calculate total marks of each student and save it. 
+3. Display the name of the student who has got the highest marks. 
+4. Display the records of those students who have got marks more than the marks of ‘Kiran’. 
+5. Display the percentage of all the students with their names. 
+6. Display the names of those students who have got maximum marks in sub1 and more than 50 in sub2 and sub3. 
+7. Update the marks of all those students who are fail, with grace marks 5 (fail means less than 40).
+8. Delete the records of those students who are fail in all three subjects. 
+9. Display the average total marks of all the students city wise excluding the Students of ‘Gurgaon’. 
+10. Get the names of students with Roll_no less than 30 and whose total marks is more than the total marks of at least one student with Roll_no greater than or equal to 30. 
+11. Create a composite index on Student table. 
+12. Create a view on the table to access roll no, name (in capitals), Marks of all 3 subjects and Percentage of all the students.
+------------------------------------
+Solutions:
+
+CREATE DATABASE mca_sql_a2;
+use mca_sql_a2;
+
+CREATE TABLE Student (
+    Roll_no INT(8) PRIMARY KEY,
+    Name VARCHAR(20) NOT NULL,
+    Address VARCHAR(50),
+    City VARCHAR(30),
+    Marks_Sub1 DECIMAL(5, 2) CHECK (Marks_Sub1 >= 0.0 AND Marks_Sub1 <= 100.0),
+    Marks_Sub2 DECIMAL(5, 2) CHECK (Marks_Sub2 >= 0.0 AND Marks_Sub2 <= 100.0),
+    Marks_Sub3 DECIMAL(5, 2) CHECK (Marks_Sub3 >= 0.0 AND Marks_Sub3 <= 100.0),
+    Total DECIMAL(5, 2) CHECK (Total>= 0.0 AND Total <= 300.0)
+    );
+DESC Student;
+
+INSERT INTO Student
+(Roll_no, Name, Address, City, Marks_Sub1, Marks_Sub2, Marks_Sub3) VALUES
+
+("1", "Alex", "Saket", "South delhi", 94.32, 90.00 , 99.00),
+("2", "Roy", "Agra", "U.p", 84.32, 80.00 , 89.00),
+("3", "Nikky", "Madipur", "North Delhi", 70.22, 90.00 , 98.10),
+("4", "Marry", "Nawada", "South Delhi", 74.88, 66.00 , 99.00),
+("5", "cindy", "faridabad", "east Delhi", 94.32, 90.00 , 99.00),
+("6", "John", "Paschim Vihar", "West Delhi", 94.32, 90.00 , 99.00),
+("7", "Freddy", "Noida", "North Delhi", 75.00, 70.00 , 99.00);
+SELECT * FROM Student;
+
+UPDATE Student
+SET Total = (Marks_Sub1 + Marks_Sub2 + Marks_Sub3);
+SELECT * FROM Student;
+
+SELECT Name, total from Student WHERE Total = (SELECT max(Total) FROM Student);
+
+SELECT * FROM Student WHERE Total > (SELECT Total FROM Student WHERE Name = "Freddy");
+
+SELECT Name, (Total / 3) AS Percentage FROM Student;
+
+SELECT Name FROM Student
+WHERE Marks_Sub1 > (SELECT max(Marks_Sub1) FROM Student)
+AND Marks_Sub2 > 50
+AND Marks_Sub3 > 50;
+
+UPDATE Student
+    SET Marks_Sub1 = Marks_Sub1 + 5
+    WHERE Marks_Sub1 < 40;
+UPDATE Student
+    SET Marks_Sub2 = Marks_Sub2 + 5
+    WHERE Marks_Sub2 < 40;
+UPDATE Student
+    SET Marks_Sub3 = Marks_Sub3 + 5
+    WHERE Marks_Sub3 < 40;
+UPDATE Student
+    SET Total = (Marks_Sub1 + Marks_Sub2 + Marks_Sub3);
+SELECT * FROM Student;
+
+DELETE FROM Student 
+WHERE
+Marks_Sub1 < 40
+AND Marks_Sub2 < 40
+AND Marks_Sub3 < 40;
+SELECT * FROM Student;
+
+SELECT AVG(Total) as Average, City
+FROM Student
+GROUP BY City
+HAVING City <> "Noida";
+
+
+SELECT S1.Name FROM Student as S1
+WHERE
+    Roll_no < 30 AND
+        EXISTS(
+            SELECT NULL FROM Student as S2
+            WHERE S2.roll_no >= 30 AND
+                S2.Total < S1.Total
+        );
+
+
+CREATE INDEX student_roll_no_name_address_city_total 
+ON Student (Roll_no, Name, Address, City, Total);
+
+
+CREATE VIEW Student_View AS
+    SELECT Roll_no, Name,
+        Marks_Sub1, Marks_Sub2, Marks_Sub3,
+        (Total / 3) as Percentage
+    FROM Student;
+SELECT * FROM Student_View;

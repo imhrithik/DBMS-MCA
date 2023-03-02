@@ -1,0 +1,97 @@
+Questions: Write queries to perform the following:
+
+1. Insert few records in it. 
+2. Increase the size of the Book_Name field to 10 characters. 
+3. Display the total price of all the books of “TMH’ publishing house. 
+4. Display the details of all the books of author “Yashwant Kanetkar” and “Robert Lafore”. 
+5. Delete all the books belonging to “PHI” publisher. 
+6. Update the price of books by 5% which belong to ‘BPB’ publishers. 
+7. Create a new table “Author” with author details such as author id (primary key), name of the author, subject, contact details, research area etc. 
+8. Insert records in it and display the records of those authors who have ‘Web mining’ as their research area. 
+9. Add a new column “Author_Id” in “Book” table and make it a foreign key on “author id” of “Author” table. 
+10. Update all the previous records of Book table to add information of author id (newly added column) .
+11. Display the records of the books where book name starts with ‘C’ or ‘G’ or ‘K’. 
+12. Create a view for the user to access Book Code, Name and Price of books which are published by ‘Pearson Education’.
+----------------------------------------------
+Solutions:
+
+CREATE DATABASE mca_sql_a1;
+use mca_sql_a1;
+
+CREATE TABLE Book (
+    book_code VARCHAR(5) PRIMARY KEY,
+    isbn_no VARCHAR(8) NOT NULL,
+    book_name VARCHAR(8) UNIQUE,
+    publisher VARCHAR(6),
+    price FLOAT(5,2) CHECK (price >= 100),
+    author_name VARCHAR(8),
+    date_of_launch DATE
+);
+DESC Book;
+
+INSERT INTO Book VALUES 
+("B1", "01", "Chem", "PHI", 104.00, "Y K", "2014-02-14"),
+("B2", "02", "Graphs", "JPG", 200.30, "Kalu", "2017-09-09"),
+("B3", "03", "KVS", "PHI", 130.70, "HC", "2016-12-12"),
+("B4", "04", "OS", "BPB", 100.70, "R L", "2010-12-14"),
+("B5", "05", "JAVA", "JPG", 270.16, "S Arora", "2012-07-11"),
+("B6", "06", "DBMS", "BPB", 200.40, "RMS Paul", "2009-12-11"),
+("B7", "07", "CN", "TMH", 190.00, "Santram", "2008-12-25"),
+("B8", "08", "SNE", "PST", 350.77, "Kalu", "2009-05-24"),
+("B9", "09", "C", "Arhnt", 360.00, "HC", "2000-12-12"),
+("B10", "10", "C++", "JPG", 177.56, "Kalu", "2015-12-14");
+SELECT * FROM Book;
+
+ALTER TABLE Book MODIFY COLUMN book_name VARCHAR(10);
+
+SELECT SUM(price) AS 'total_price' FROM Book WHERE publisher = 'TMH';
+
+SELECT * FROM Book WHERE author_name = "Y K" OR author_name = "R L";
+
+DELETE FROM Book WHERE publisher = "PHI";
+
+UPDATE book SET price = price * 0.05 WHERE publisher = 'BPB';
+
+CREATE TABLE Author (
+    author_id VARCHAR(5) PRIMARY KEY,
+    author_name VARCHAR(8) NOT NULL,
+    subject VARCHAR(10) NOT NULL,
+    contact VARCHAR(10),
+    research VARCHAR(10)
+);
+DESC Author;
+
+INSERT INTO Author VALUES
+("A1", "Kalu", "Graphs", "6384142355", "Web Mining"),
+("A2", "HC", "KVS", "4433443344", "Trees"),
+("A3", "R L", "OS", "6348126734", "Paging"),
+("A4", "Santram", "CN", "7243123456", "Web Mining"),
+("A5", "HC", "C", "7834783412", "Games"),
+("A6", "Kalu", "C++", "6348112211", "Games"),
+("A7", "RMS Paul", "DBMS", "7983724531", "ER"),
+("A8", "S Arora", "JAVA", "9899123433", "OOPS"),
+("A9", "Ravi", "Fiction", "9863418125", NULL),
+("A10", "Ram", "Art", "7240132468", "Craft");
+
+SELECT * FROM Author;
+SELECT * FROM Author WHERE research = "Web Mining";
+
+ALTER TABLE Book 
+ADD COLUMN author_id VARCHAR(10),
+ADD FOREIGN KEY(author_id) REFERENCES Author(author_id);
+DESC Book;
+
+UPDATE Book
+INNER JOIN Author ON (Book.author_name = Author.author_name)
+SET Book.author_id = Author.author_id;
+SELECT * FROM Book;
+
+SELECT * FROM Book WHERE 
+book_name LIKE "C%" OR
+book_name LIKE "G%" OR
+book_name LIKE "K%";
+
+CREATE VIEW PHI_books AS
+SELECT book_code, book_name, price FROM Book
+WHERE Book.publisher = "TMH";
+SELECT * FROM PHI_books;
